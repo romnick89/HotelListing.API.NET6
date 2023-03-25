@@ -12,6 +12,7 @@ namespace HotelListing.API.Repository
         {
             this._context = context;
         }
+
         public async Task<T> AddAsync(T entity)
         {
             await _context.AddAsync(entity);
@@ -39,7 +40,7 @@ namespace HotelListing.API.Repository
 
         public async Task<T> GetAsync(int? id)
         {
-            if(id is null)
+            if (id is null)
             {
                 return null;
             }
@@ -48,13 +49,8 @@ namespace HotelListing.API.Repository
 
         public async Task UpdateAsync(T entity)
         {
-            _context.Update(entity);
+             _context.Update(entity);
             await _context.SaveChangesAsync();
-        }
-
-        Task<T> IGenericRepository<T>.UpdateAsync(T entity)
-        {
-            throw new NotImplementedException();
         }
     }
 }
