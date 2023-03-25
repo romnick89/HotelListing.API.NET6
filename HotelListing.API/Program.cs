@@ -5,7 +5,7 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
+//connect to the local db
 var connectionString = builder.Configuration.GetConnectionString("HotelListingsDbConnectionString");
 builder.Services.AddDbContext<HotelListingDbContext>(options =>
 {
@@ -17,12 +17,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+//Add CORS => Cross Origin Resource Sharing
 //prepare to allow third party access 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", b => b.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod());
 });
 
+//inform Serilog when the app begins
+//write in the log
 builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
 
 var app = builder.Build();
