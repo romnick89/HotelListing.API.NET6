@@ -4,6 +4,5 @@ namespace HotelListing.API.Contracts
 {
     public interface ICountriesRepository : IGenericRepository<Country>
     {
-
     }
 }
