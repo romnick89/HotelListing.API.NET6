@@ -1,12 +1,10 @@
-﻿namespace HotelListing.API.Models.Hotel
+﻿using Microsoft.Build.Framework;
+
+namespace HotelListing.API.Models.Hotel
 {
-    public class HotelModel
+    public class HotelModel : BaseHotelModel
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        public string Address { get; set; }
-        public double Rating { get; set; }
-
-        public int CountryId { get; set; }
+        
     }
 }
