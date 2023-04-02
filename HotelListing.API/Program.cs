@@ -34,7 +34,9 @@ builder.Services.AddCors(options =>
 //implement identity core
 builder.Services.AddIdentityCore<APIUser>()
     .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<HotelListingDbContext>();
+    .AddTokenProvider<DataProtectorTokenProvider<APIUser>>("HotelListingAPI")
+    .AddEntityFrameworkStores<HotelListingDbContext>()
+    .AddDefaultTokenProviders();
 
 //inform Serilog when the app begins
 //write in the log
@@ -81,6 +83,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
