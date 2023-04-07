@@ -44,17 +44,16 @@ namespace HotelListing.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<HotelModel>> GetHotel(int id)
         {
-          if (_hotelsRepository.GetAsync(id) == null)
-          {
-                throw new NotFoundException(nameof(GetHotel), id);
-            }
-            var hotel = await _hotelsRepository.GetAsync(id);
-
-            if (hotel == null)
+            if (_hotelsRepository == null)
             {
                 throw new NotFoundException(nameof(GetHotel), id);
             }
-
+            var hotel = await _hotelsRepository.GetAsync(id);
+            
+            if(hotel == null)
+            {
+                throw new NotFoundException(nameof(GetHotel), id);
+            }
             return Ok(_mapper.Map<HotelModel>(hotel));
         }
 
@@ -65,7 +64,7 @@ namespace HotelListing.API.Controllers
         {
             if (id != hotelModel.Id)
             {
-                return BadRequest();
+                throw new BadRequestException(nameof(PutHotel), id, "Invalid Record ID");
             }
             var hotel = await _hotelsRepository.GetAsync(id);
             if (hotel == null)

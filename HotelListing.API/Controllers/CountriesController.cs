@@ -72,7 +72,8 @@ namespace HotelListing.API.Controllers
         {
             if (id != updateCountry.Id)
             {
-                return BadRequest("Invalid Record ID");
+                //return BadRequest("Invalid Record ID");
+                throw new BadRequestException(nameof(PutCountry), id,"Invalid Record ID");
             }
 
             var country = await _countriesRepository.GetAsync(id);

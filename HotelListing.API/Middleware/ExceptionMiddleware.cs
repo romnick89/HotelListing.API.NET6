@@ -49,6 +49,10 @@ namespace HotelListing.API.Middleware
                     statusCode = HttpStatusCode.Unauthorized;
                     errorDetails.ErrorType = "Unauthorised";
                     break;
+                case BadRequestException badRequestException:
+                    statusCode = HttpStatusCode.BadRequest;
+                    errorDetails.ErrorType = "BadRequest";
+                    break;
                 default:
                     break;
             }
