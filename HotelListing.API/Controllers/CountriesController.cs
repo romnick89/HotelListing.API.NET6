@@ -10,6 +10,7 @@ using HotelListing.API.Models.Country;
 using AutoMapper;
 using HotelListing.API.Contracts;
 using Microsoft.AspNetCore.Authorization;
+using HotelListing.API.Exceptions;
 
 namespace HotelListing.API.Controllers
 {
@@ -19,11 +20,13 @@ namespace HotelListing.API.Controllers
     {
         private readonly IMapper _mapper;
         private readonly ICountriesRepository _countriesRepository;
+        private readonly ILogger<CountriesController> _logger;
 
-        public CountriesController(IMapper mapper, ICountriesRepository countriesRepository)
+        public CountriesController(IMapper mapper, ICountriesRepository countriesRepository, ILogger<CountriesController> logger)
         {           
             this._mapper = mapper;
             this._countriesRepository = countriesRepository;
+            this._logger = logger;
         }
 
         // GET: api/Countries
@@ -43,6 +46,11 @@ namespace HotelListing.API.Controllers
 
             if (country == null)
             {
+                //logging in a controller level
+                /*_logger.LogWarning($"Record foung in {nameof(GetCountry)} with Id: {id}. ");*/
+
+                //Global Exception Handler
+                throw new NotFoundException(nameof(GetCountries), id);
                 return NotFound();
             }
 
@@ -65,7 +73,7 @@ namespace HotelListing.API.Controllers
             var country = await _countriesRepository.GetAsync(id);
             if(country == null)
             {
-                return NotFound();
+                throw new NotFoundException(nameof(GetCountries), id);
             }
             _mapper.Map(updateCountry, country);
 
@@ -77,7 +85,7 @@ namespace HotelListing.API.Controllers
             {
                 if (!await CountryExists(id))
                 {
-                    return NotFound();
+                    throw new NotFoundException(nameof(GetCountries), id);
                 }
                 else
                 {
@@ -110,7 +118,7 @@ namespace HotelListing.API.Controllers
             var country = await _countriesRepository.GetAsync(id);
             if (country == null)
             {
-                return NotFound();
+                throw new NotFoundException(nameof(GetCountries), id);
             }
 
             await _countriesRepository.DeleteAsync(id);

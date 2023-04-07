@@ -27,27 +27,18 @@ namespace HotelListing.API.Controllers
         public async Task<ActionResult> Register([FromBody]APIUserModel userModel)
         {
             _logger.LogInformation($"Registration Attempt for {userModel.Email}");
-            try
-            {
-                var errors = await _authManager.Register(userModel);
+           
+            var errors = await _authManager.Register(userModel);
 
-                if (errors.Any())
+            if (errors.Any())
+            {
+                foreach (var error in errors)
                 {
-                    foreach (var error in errors)
-                    {
-                        ModelState.AddModelError(error.Code, error.Description);
-                    }
-                    return BadRequest(ModelState);
+                    ModelState.AddModelError(error.Code, error.Description);
                 }
-                return Ok();
-
+                return BadRequest(ModelState);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Something Went Wrong in the {nameof(Register)} - User Registration");
-                return Problem($"Something Went Wrong in the {nameof(Register)}. Please Contact Support", statusCode: 500); 
-            }
-            
+            return Ok();          
         }
 
         //POST: api/Account/login
@@ -59,24 +50,15 @@ namespace HotelListing.API.Controllers
         public async Task<ActionResult> Login([FromBody] LoginModel loginModel)
         {
             _logger.LogInformation($"Login Attempt for {loginModel.Email}");
-            try
-            {
-                var authResponse = await _authManager.Login(loginModel);
-
-                if (authResponse == null)
-                {
-                    return Unauthorized();
-                }
-
-                return Ok(authResponse);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Something Went Wrong in the {nameof(Login)} - User Registration");
-                return Problem($"Something Went Wrong in the {nameof(Login)}. Please Contact Support", statusCode: 500);
-
-            }
             
+            var authResponse = await _authManager.Login(loginModel);
+
+            if (authResponse == null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(authResponse);         
         }
 
         //POST: api/Account/refreshtoken
