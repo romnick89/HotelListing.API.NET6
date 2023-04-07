@@ -11,6 +11,7 @@ using AutoMapper;
 using HotelListing.API.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using HotelListing.API.Exceptions;
+using HotelListing.API.Repository;
 
 namespace HotelListing.API.Controllers
 {
@@ -20,25 +21,29 @@ namespace HotelListing.API.Controllers
     {
         private readonly IMapper _mapper;
         private readonly ICountriesRepository _countriesRepository;
-        private readonly ILogger<CountriesController> _logger;
+        //private readonly ILogger<CountriesController> _logger;
 
-        public CountriesController(IMapper mapper, ICountriesRepository countriesRepository, ILogger<CountriesController> logger)
+        public CountriesController(IMapper mapper, ICountriesRepository countriesRepository/*, ILogger<CountriesController> logger*/)
         {           
             this._mapper = mapper;
             this._countriesRepository = countriesRepository;
-            this._logger = logger;
+            //this._logger = logger;
         }
 
         // GET: api/Countries
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GetCountryModel>>> GetCountries()
         {
+            if (_countriesRepository == null)
+            {
+                throw new NotFoundException(nameof(GetCountries));
+            }
             var countries =  await _countriesRepository.GetAllAsync();
             var records = _mapper.Map<List<GetCountryModel>>(countries);
             return Ok(records);
         }
 
-        // GET: api/Countries/5
+        // GET: api/Country/5
         [HttpGet("{id}")]
         public async Task<ActionResult<CountryModel>> GetCountry(int id)
         {
@@ -50,8 +55,8 @@ namespace HotelListing.API.Controllers
                 /*_logger.LogWarning($"Record foung in {nameof(GetCountry)} with Id: {id}. ");*/
 
                 //Global Exception Handler
-                throw new NotFoundException(nameof(GetCountries), id);
-                return NotFound();
+                throw new NotFoundException(nameof(GetCountry), id);
+                //return NotFound();
             }
 
             var countryModel = _mapper.Map<CountryModel>(country);

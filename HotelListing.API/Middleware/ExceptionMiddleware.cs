@@ -1,5 +1,5 @@
 ﻿using HotelListing.API.Exceptions;
-using HotelListing.API.Models.Users;
+using HotelListing.API.Models.Errors;
 using Newtonsoft.Json;
 using System.Net;
 
@@ -45,6 +45,10 @@ namespace HotelListing.API.Middleware
                     statusCode = HttpStatusCode.NotFound;
                     errorDetails.ErrorType = "Not Found";
                     break;
+                case UnauthorisedException unauthorisedException:
+                    statusCode = HttpStatusCode.Unauthorized;
+                    errorDetails.ErrorType = "Unauthorised";
+                    break;
                 default:
                     break;
             }
@@ -52,10 +56,5 @@ namespace HotelListing.API.Middleware
             context.Response.StatusCode = (int)statusCode;
             return context.Response.WriteAsync(response);
         }
-    }
-    public class ErrorDetails
-    {
-        public string ErrorType { get; set; }
-        public string ErrorMessage { get; set; }
     }
 }

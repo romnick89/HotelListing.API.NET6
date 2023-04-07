@@ -1,4 +1,5 @@
 ﻿using HotelListing.API.Contracts;
+using HotelListing.API.Exceptions;
 using HotelListing.API.Models.Users;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -49,13 +50,13 @@ namespace HotelListing.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult> Login([FromBody] LoginModel loginModel)
         {
-            _logger.LogInformation($"Login Attempt for {loginModel.Email}");
+            //_logger.LogInformation($"Login Attempt for {loginModel.Email}");
             
             var authResponse = await _authManager.Login(loginModel);
 
             if (authResponse == null)
             {
-                return Unauthorized();
+                throw new UnauthorisedException(nameof(Login), loginModel.Email);
             }
 
             return Ok(authResponse);         
@@ -73,7 +74,7 @@ namespace HotelListing.API.Controllers
 
             if (authResponse == null)
             {
-                return Unauthorized();
+                throw new UnauthorisedException(nameof(RefreshToken));
             }
 
             return Ok(authResponse);

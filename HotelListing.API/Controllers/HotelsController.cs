@@ -10,6 +10,7 @@ using HotelListing.API.Contracts;
 using AutoMapper;
 using HotelListing.API.Models.Hotel;
 using Microsoft.AspNetCore.Authorization;
+using HotelListing.API.Exceptions;
 
 namespace HotelListing.API.Controllers
 {
@@ -31,11 +32,11 @@ namespace HotelListing.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<HotelModel>>> GetHotels()
         {
-          if (_hotelsRepository == null)
-          {
-              return NotFound();
-          }
-          var hotels = await _hotelsRepository.GetAllAsync();
+            if (_hotelsRepository == null)
+            {
+                throw new NotFoundException(nameof(GetHotels));
+            }
+            var hotels = await _hotelsRepository.GetAllAsync();
             return Ok(_mapper.Map<List<HotelModel>>(hotels));
         }
 
@@ -45,13 +46,13 @@ namespace HotelListing.API.Controllers
         {
           if (_hotelsRepository.GetAsync(id) == null)
           {
-              return NotFound();
-          }
+                throw new NotFoundException(nameof(GetHotel), id);
+            }
             var hotel = await _hotelsRepository.GetAsync(id);
 
             if (hotel == null)
             {
-                return NotFound();
+                throw new NotFoundException(nameof(GetHotel), id);
             }
 
             return Ok(_mapper.Map<HotelModel>(hotel));
@@ -69,7 +70,8 @@ namespace HotelListing.API.Controllers
             var hotel = await _hotelsRepository.GetAsync(id);
             if (hotel == null)
             {
-                return NotFound();
+                throw new NotFoundException(nameof(GetHotel), id);
+                //return NotFound();
             }
 
             _mapper.Map(hotelModel, hotel);
@@ -82,7 +84,7 @@ namespace HotelListing.API.Controllers
             {
                 if (!await HotelExists(id))
                 {
-                    return NotFound();
+                    throw new NotFoundException(nameof(GetHotel), id);
                 }
                 else
                 {
@@ -111,15 +113,11 @@ namespace HotelListing.API.Controllers
         // DELETE: api/Hotels/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteHotel(int id)
-        {
-            if (_hotelsRepository.GetAsync(id) == null)
-            {
-                return NotFound();
-            }
+        {           
             var hotel = await _hotelsRepository.GetAsync(id);
             if (hotel == null)
             {
-                return NotFound();
+                throw new NotFoundException(nameof(GetHotel), id);
             }
 
             await _hotelsRepository.DeleteAsync(id);
