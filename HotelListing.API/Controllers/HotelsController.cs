@@ -11,12 +11,13 @@ using AutoMapper;
 using HotelListing.API.Models.Hotel;
 using Microsoft.AspNetCore.Authorization;
 using HotelListing.API.Exceptions;
+using HotelListing.API.Models;
 
 namespace HotelListing.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class HotelsController : ControllerBase
     {       
         private readonly IHotelsRepository _hotelsRepository;
@@ -29,7 +30,7 @@ namespace HotelListing.API.Controllers
         }
 
         // GET: api/Hotels
-        [HttpGet]
+        [HttpGet("GetAllHotels")]
         public async Task<ActionResult<IEnumerable<HotelModel>>> GetHotels()
         {
             if (_hotelsRepository == null)
@@ -38,6 +39,19 @@ namespace HotelListing.API.Controllers
             }
             var hotels = await _hotelsRepository.GetAllAsync();
             return Ok(_mapper.Map<List<HotelModel>>(hotels));
+        }
+
+        // GET: api/Hotels?StartIndex=0&PageSize=3&PageNumber=1
+        [HttpGet]
+        public async Task<ActionResult<QueryPaged<HotelModel>>> GetPagedHotels([FromQuery] QueryParameters queryParameters)
+        {
+            if (_hotelsRepository == null)
+            {
+                throw new NotFoundException(nameof(GetHotels));
+            }
+            var pagedHotelsResult = await _hotelsRepository.GetAllAsync<HotelModel>(queryParameters);
+            //return Ok(_mapper.Map<List<HotelModel>>(hotels));
+            return Ok(pagedHotelsResult);
         }
 
         // GET: api/Hotels/5
