@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HotelListing.API.Data;
 using HotelListing.API.Core.Contracts;
@@ -17,7 +12,7 @@ namespace HotelListing.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class HotelsController : ControllerBase
     {       
         private readonly IHotelsRepository _hotelsRepository;
@@ -33,12 +28,12 @@ namespace HotelListing.API.Controllers
         [HttpGet("GetAllHotels")]
         public async Task<ActionResult<IEnumerable<HotelModel>>> GetHotels()
         {
-            if (_hotelsRepository == null)
+            /*if (_hotelsRepository == null)
             {
                 throw new NotFoundException(nameof(GetHotels));
-            }
-            var hotels = await _hotelsRepository.GetAllAsync();
-            return Ok(_mapper.Map<List<HotelModel>>(hotels));
+            }*/
+            var hotels = await _hotelsRepository.GetAllAsync<List<HotelModel>>();
+            return Ok(hotels);
         }
 
         // GET: api/Hotels?StartIndex=0&PageSize=3&PageNumber=1
@@ -58,17 +53,17 @@ namespace HotelListing.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<HotelModel>> GetHotel(int id)
         {
-            if (_hotelsRepository == null)
+            /*if (_hotelsRepository == null)
             {
                 throw new NotFoundException(nameof(GetHotel), id);
-            }
-            var hotel = await _hotelsRepository.GetAsync(id);
+            }*/
+            var hotel = await _hotelsRepository.GetAsync<HotelModel>(id);
             
-            if(hotel == null)
+            /*if(hotel == null)
             {
                 throw new NotFoundException(nameof(GetHotel), id);
-            }
-            return Ok(_mapper.Map<HotelModel>(hotel));
+            }*/
+            return Ok(hotel);
         }
 
         // PUT: api/Hotels/5
@@ -81,17 +76,17 @@ namespace HotelListing.API.Controllers
                 throw new BadRequestException(nameof(PutHotel), id, "Invalid Record ID");
             }
             var hotel = await _hotelsRepository.GetAsync(id);
-            if (hotel == null)
+            /*if (hotel == null)
             {
                 throw new NotFoundException(nameof(GetHotel), id);
                 //return NotFound();
             }
 
-            _mapper.Map(hotelModel, hotel);
+            _mapper.Map(hotelModel, hotel);*/
 
             try
             {
-                await _hotelsRepository.UpdateAsync(hotel);
+                await _hotelsRepository.UpdateAsync(id, hotel);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -113,25 +108,25 @@ namespace HotelListing.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Hotel>> PostHotel(CreateHotelModel createHotelModel)
         {
-          if (_hotelsRepository == null)
+          /*if (_hotelsRepository == null)
           {
               return Problem("Entity set 'HotelListingDbContext.Hotels'  is null.");
-          }
-            var hotel = _mapper.Map<Hotel>(createHotelModel);
-            await _hotelsRepository.AddAsync(hotel);
+          }*/
+            //var hotel = _mapper.Map<Hotel>(createHotelModel);
+            var hotel = await _hotelsRepository.AddAsync<CreateHotelModel, HotelModel>(createHotelModel);
 
-            return CreatedAtAction("GetHotel", new { id = hotel.Id }, hotel);
+            return CreatedAtAction(nameof(GetHotel), new { id = hotel.Id }, hotel);
         }
 
         // DELETE: api/Hotels/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteHotel(int id)
         {           
-            var hotel = await _hotelsRepository.GetAsync(id);
-            if (hotel == null)
+            //var hotel = await _hotelsRepository.GetAsync(id);
+            /*if (hotel == null)
             {
                 throw new NotFoundException(nameof(GetHotel), id);
-            }
+            }*/
 
             await _hotelsRepository.DeleteAsync(id);
 

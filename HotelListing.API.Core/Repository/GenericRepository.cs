@@ -4,6 +4,7 @@ using HotelListing.API.Core.Contracts;
 using HotelListing.API.Data;
 using HotelListing.API.Core.Models;
 using Microsoft.EntityFrameworkCore;
+using HotelListing.API.Core.Exceptions;
 
 namespace HotelListing.API.Core.Repository
 {
@@ -24,10 +25,25 @@ namespace HotelListing.API.Core.Repository
             await _context.SaveChangesAsync();
             return entity;
         }
+        //seperate method: do mapper inside generic repository
+        public async Task<TResult> AddAsync<TSource, TResult>(TSource source)
+        {
+            var entity = _mapper.Map<T>(source);
+            await _context.AddAsync(entity);
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<TResult>(entity);
+        }
 
         public async Task DeleteAsync(int id)
         {
             var entity = await GetAsync(id);
+
+            if (entity == null)
+            {                               //type of entity "country || hotel" not found
+                throw new NotFoundException(typeof(T).Name, id);
+            }
+
             _context.Set<T>().Remove(entity);
             await _context.SaveChangesAsync();
         }
@@ -42,7 +58,7 @@ namespace HotelListing.API.Core.Repository
         {
             return await _context.Set<T>().ToListAsync();
         }
-
+        //implement paging
         public async Task<QueryPaged<TResult>> GetAllAsync<TResult>(QueryParameters queryParameters)
         {
             //find the total size
@@ -57,6 +73,11 @@ namespace HotelListing.API.Core.Repository
                 TotalCount = totalSize
             };
         }
+        //seperate method: do mapper inside generic repository
+        public async Task<List<TResult>> GetAllAsync<TResult>()
+        {                                   //add mapper configuration
+            return await _context.Set<T>().ProjectTo<TResult>(_mapper.ConfigurationProvider).ToListAsync();
+        }
 
         public async Task<T> GetAsync(int? id)
         {
@@ -67,9 +88,33 @@ namespace HotelListing.API.Core.Repository
             return await _context.Set<T>().FindAsync(id);
         }
 
+        //seperate method: do mapper inside generic repository
+        public async Task<TResult?> GetAsync<TResult>(int? id)
+        {
+            var result = await _context.Set<T>().FindAsync(id);
+            if (result is null)
+            {
+                throw new NotFoundException(typeof(T).Name, id.HasValue ? id : "No key provided");
+            }
+            
+            return _mapper.Map<TResult>(result);
+        }
+
         public async Task UpdateAsync(T entity)
         {
              _context.Update(entity);
+            await _context.SaveChangesAsync();
+        }
+        //seperate method: do mapper inside generic repository
+        public async Task UpdateAsync<TSource>(int id, TSource source)
+        {
+            var entity = await GetAsync(id);
+            if(entity is null)
+            {
+                throw new NotFoundException(typeof(T).Name, id);
+            }
+            _mapper.Map(source, entity);
+            _context.Update(entity);
             await _context.SaveChangesAsync();
         }
     }
