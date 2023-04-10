@@ -12,7 +12,7 @@ namespace HotelListing.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class HotelsController : ControllerBase
     {       
         private readonly IHotelsRepository _hotelsRepository;
@@ -32,7 +32,7 @@ namespace HotelListing.API.Controllers
             {
                 throw new NotFoundException(nameof(GetHotels));
             }*/
-            var hotels = await _hotelsRepository.GetAllAsync<List<HotelModel>>();
+            var hotels = await _hotelsRepository.GetAllAsync<HotelModel>();
             return Ok(hotels);
         }
 

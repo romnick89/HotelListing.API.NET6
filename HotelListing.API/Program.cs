@@ -11,6 +11,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
+using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +29,39 @@ builder.Services.AddDbContext<HotelListingDbContext>(options =>
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//expand Swagger doc by adding JWT authentication
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "hotel Listing API", Version = "v1" });
+    options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
+    {
+        Description = @"JWT Authorization header using the Bearer scheme.
+                      Enter 'Bearer' [space] and then your token in the text input below.
+                      Example: 'Bearer 12345abcdef'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = JwtBearerDefaults.AuthenticationScheme
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = JwtBearerDefaults.AuthenticationScheme
+                },
+                Scheme = "0auth2",
+                Name = JwtBearerDefaults.AuthenticationScheme,
+                In = ParameterLocation.Header
+            },
+            new List<string>()
+        }
+    });
+});
 
 //Add CORS => Cross Origin Resource Sharing
 //prepare to allow third party access 
@@ -100,6 +136,11 @@ builder.Services.AddResponseCaching(options =>
     options.MaximumBodySize = 1024;
     options.UseCaseSensitivePaths = true;
 });
+//health checks service
+builder.Services.AddHealthChecks().AddCheck<CustomHealthCheck>("Custom Health Check", failureStatus: HealthStatus.Degraded, tags: new[] { "custom" })
+    .AddSqlServer(connectionString, tags: new[] { "database" })
+    .AddDbContextCheck<HotelListingDbContext>(tags: new[] { "database" });
+
                                   //implement OData
 builder.Services.AddControllers().AddOData(options =>
     options.Select().Filter().OrderBy()
@@ -113,6 +154,71 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+//run the check with just the tag
+app.MapHealthChecks("/healthcheck", new HealthCheckOptions
+{
+    Predicate = healthcheck => healthcheck.Tags.Contains("custom"),
+    ResultStatusCodes =
+    {
+        [HealthStatus.Healthy] = StatusCodes.Status200OK,
+        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
+        [HealthStatus.Degraded] = StatusCodes.Status200OK
+    },
+    ResponseWriter = WriteResponse
+});
+
+app.MapHealthChecks("/databasehealthcheck", new HealthCheckOptions
+{
+    Predicate = healthcheck => healthcheck.Tags.Contains("database"),
+    ResultStatusCodes =
+    {
+        [HealthStatus.Healthy] = StatusCodes.Status200OK,
+        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
+        [HealthStatus.Degraded] = StatusCodes.Status200OK
+    },
+    ResponseWriter = WriteResponse
+});
+
+static Task WriteResponse(HttpContext context, HealthReport healthReport)
+{
+    context.Response.ContentType = "application/json; charset=utf-8";
+
+    var options = new JsonWriterOptions { Indented = true };
+
+    using var memoryStream = new MemoryStream();
+    using (var jsonWriter = new Utf8JsonWriter(memoryStream, options))
+    {
+        jsonWriter.WriteStartObject();
+        jsonWriter.WriteString("status", healthReport.Status.ToString());
+        jsonWriter.WriteStartObject("results");
+
+        foreach (var healthReportEntry in healthReport.Entries)
+        {
+            jsonWriter.WriteStartObject(healthReportEntry.Key);
+            jsonWriter.WriteString("status", healthReportEntry.Value.Description);
+            jsonWriter.WriteString("description", healthReportEntry.Value.Description);
+            jsonWriter.WriteStartObject("data");
+
+            foreach(var item in healthReportEntry.Value.Data)
+            {
+                jsonWriter.WritePropertyName(item.Key);
+                JsonSerializer.Serialize(jsonWriter, item.Value, item.Value?.GetType() ?? typeof(object));
+            }
+
+            jsonWriter.WriteEndObject();
+            jsonWriter.WriteEndObject();
+        }
+        jsonWriter.WriteEndObject();
+        jsonWriter.WriteEndObject();
+    }
+
+    return context.Response.WriteAsync(Encoding.UTF8.GetString(memoryStream.ToArray()));
+}
+
+//run check on everything
+app.MapHealthChecks("/health");
+
+app.UseSerilogRequestLogging();
 
 app.UseMiddleware<ExceptionMiddleware>();
 
@@ -141,3 +247,20 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+
+ public class CustomHealthCheck : IHealthCheck
+{
+    public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        var isHealthy = true;
+
+        /*Custom checks. logic...etc...etc.*/
+
+        if (isHealthy)
+        {
+            return Task.FromResult(HealthCheckResult.Healthy("All systems are looking good"));
+        }
+        return Task.FromResult(new HealthCheckResult(context.Registration.FailureStatus, "System is Unhealthy"));
+    }
+}
